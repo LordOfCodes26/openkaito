@@ -88,10 +88,13 @@ class Miner(BaseMinerNeuron):
     ) -> TextEmbeddingSynapse:
         texts = query.texts
         dimensions = query.dimensions
+        print("-----------------------------requests-----------------------------------")
+        print(texts)
+        print(dimensions)
         tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
         model =  BertModel.from_pretrained("bert-base-uncased")
 
-        encoded_input = tokenizer(texts, padding=True, truncation=True, return_tensor='pt')
+        encoded_input = tokenizer(texts.tolist(), padding=True, truncation=True, return_tensor='pt')
         projection_layer = nn.Linear(model.config.hidden_size, dimensions)
 
         with torch.no_grad():
