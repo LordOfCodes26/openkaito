@@ -17,6 +17,7 @@
 
 import copy
 import typing
+import asyncio
 from abc import ABC, abstractmethod
 
 import bittensor as bt
@@ -89,7 +90,7 @@ class BaseNeuron(ABC):
         bt.logging.info(f"Metagraph: {self.metagraph}")
 
         # Check if the miner is registered on the Bittensor network before proceeding further.
-        self.check_registered()
+        asyncio.run(self.check_registered())
 
         # Each miner gets a unique identity (UID) in the network for differentiation.
         self.uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
@@ -120,9 +121,9 @@ class BaseNeuron(ABC):
         # Always save state.
         self.save_state()
 
-    def check_registered(self):
+    async def check_registered(self):
         # --- Check for registration.
-        if not self.subtensor.is_hotkey_registered(
+        if not await self.subtensor.is_hotkey_registered(
             netuid=self.config.netuid,
             hotkey_ss58=self.wallet.hotkey.ss58_address,
         ):
