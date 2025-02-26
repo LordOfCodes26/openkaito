@@ -59,16 +59,11 @@ class BaseNeuron(ABC):
         return ttl_get_block(self)
 
     def __init__(self, config=None):
-        self.config = config or BaseNeuron.config() 
-        asyncio.run(self.initialize())
-
-    async def initialize(self):git
         base_config = copy.deepcopy(config or BaseNeuron.config())
         self.config = self.config()
         self.config.merge(base_config)
         self.check_config(self.config)
-
-        # Set up logging with the provided configuration and directory.
+         # Set up logging with the provided configuration and directory.
         bt.logging(config=self.config.logging)
 
         # If a gpu is required, set the device to cuda:N (e.g. cuda:0)
@@ -80,6 +75,9 @@ class BaseNeuron(ABC):
         # Build Bittensor objects
         # These are core Bittensor classes to interact with the network.
         bt.logging.info("Setting up bittensor objects.")
+        asyncio.run(self.initialize())
+
+    async def initialize(self):
 
         # The wallet holds the cryptographic key pairs for the miner.
         self.wallet = bt.wallet(config=self.config)
