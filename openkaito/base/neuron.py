@@ -22,6 +22,7 @@ from abc import ABC, abstractmethod
 import bittensor as bt
 
 from openkaito import __spec_version__ as spec_version
+from openkaito.protocol import AsyncSubtensor
 from openkaito.utils.config import add_args, check_config, config
 from openkaito.utils.misc import ttl_get_block
 
@@ -80,7 +81,7 @@ class BaseNeuron(ABC):
         bt.logging.info(f"Wallet: {self.wallet}")
 
         # The subtensor is our connection to the Bittensor blockchain.
-        self.subtensor = bt.subtensor(config=self.config)
+        self.subtensor = AsyncSubtensor(config=self.config)
         bt.logging.info(f"Subtensor: {self.subtensor}")
 
         # The metagraph holds the state of the network, letting us know about other validators and miners.
