@@ -2,14 +2,14 @@
 # Copyright © 2023 Yuma Rao
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-# documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+# documentation files (the “Software”), to deal in the Software without restriction, including without limitation
 # the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
 # and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
 # The above copyright notice and this permission notice shall be included in all copies or substantial portions of
 # the Software.
 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 # THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
@@ -17,11 +17,9 @@
 
 import copy
 import typing
-import asyncio
 from abc import ABC, abstractmethod
 
 import bittensor as bt
-from bittensor.core.async_subtensor import AsyncSubtensor
 
 from openkaito import __spec_version__ as spec_version
 from openkaito.utils.config import add_args, check_config, config
@@ -63,7 +61,8 @@ class BaseNeuron(ABC):
         self.config = self.config()
         self.config.merge(base_config)
         self.check_config(self.config)
-         # Set up logging with the provided configuration and directory.
+
+        # Set up logging with the provided configuration and directory.
         bt.logging(config=self.config.logging)
 
         # If a gpu is required, set the device to cuda:N (e.g. cuda:0)
@@ -75,24 +74,21 @@ class BaseNeuron(ABC):
         # Build Bittensor objects
         # These are core Bittensor classes to interact with the network.
         bt.logging.info("Setting up bittensor objects.")
-        asyncio.run(self.initialize())
-
-    async def initialize(self):
 
         # The wallet holds the cryptographic key pairs for the miner.
         self.wallet = bt.wallet(config=self.config)
         bt.logging.info(f"Wallet: {self.wallet}")
 
         # The subtensor is our connection to the Bittensor blockchain.
-        self.subtensor = AsyncSubtensor(config=self.config)
+        self.subtensor = bt.subtensor(config=self.config)
         bt.logging.info(f"Subtensor: {self.subtensor}")
 
         # The metagraph holds the state of the network, letting us know about other validators and miners.
-        self.metagraph = await self.subtensor.metagraph(self.config.netuid)
+        self.metagraph = self.subtensor.metagraph(self.config.netuid)
         bt.logging.info(f"Metagraph: {self.metagraph}")
 
         # Check if the miner is registered on the Bittensor network before proceeding further.
-        asyncio.run(self.check_registered())
+        self.check_registered()
 
         # Each miner gets a unique identity (UID) in the network for differentiation.
         self.uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
@@ -123,9 +119,9 @@ class BaseNeuron(ABC):
         # Always save state.
         self.save_state()
 
-    async def check_registered(self):
+    def check_registered(self):
         # --- Check for registration.
-        if not await self.subtensor.is_hotkey_registered(
+        if not self.subtensor.is_hotkey_registered(
             netuid=self.config.netuid,
             hotkey_ss58=self.wallet.hotkey.ss58_address,
         ):
