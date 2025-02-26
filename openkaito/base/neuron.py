@@ -59,9 +59,10 @@ class BaseNeuron(ABC):
         return ttl_get_block(self)
 
     def __init__(self, config=None):
+        self.config = config or BaseNeuron.config() 
         asyncio.run(self.initialize())
 
-    async def initialize(self):
+    async def initialize(self):git
         base_config = copy.deepcopy(config or BaseNeuron.config())
         self.config = self.config()
         self.config.merge(base_config)
