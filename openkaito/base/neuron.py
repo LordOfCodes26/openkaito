@@ -68,6 +68,7 @@ class BaseNeuron(ABC):
         # The subtensor is our connection to the Bittensor blockchain.
         self.subtensor = AsyncSubtensor(config=self.config)
         bt.logging.info(f"Subtensor: {self.subtensor}")
+        await self.subtensor.sync_metagraph(self.config.netuid)
 
         # The metagraph holds the state of the network, letting us know about other validators and miners.
         self.metagraph = self.subtensor.metagraph(self.config.netuid)
