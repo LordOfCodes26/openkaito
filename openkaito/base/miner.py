@@ -82,7 +82,6 @@ class BaseMinerNeuron(BaseNeuron):
         )
         bt.logging.info(f"Axon created: {self.axon}")
 
-        self.last_sync_block = self.block - 1000
 
         # Instantiate runners
         self.should_exit: bool = False
@@ -236,17 +235,10 @@ class BaseMinerNeuron(BaseNeuron):
 
         # Sync the metagraph.
         self.metagraph.sync(subtensor=self.subtensor)
-        self.last_sync_block = self.block
         bt.logging.info("resync_metagraph() done")
 
     def should_set_weights(self) -> bool:
         return False
-
-    def should_sync_metagraph(self):
-        """
-        Check if enough epoch blocks have elapsed since the last checkpoint to sync.
-        """
-        return self.block - self.metagraph.last_update[self.uid] > self.config.neuron.epoch_length
 
     async def blacklist(self, synapse: bt.Synapse) -> typing.Tuple[bool, str]:
         """
