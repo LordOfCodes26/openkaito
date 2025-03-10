@@ -19,7 +19,7 @@ import asyncio
 import threading
 import time
 import traceback
-import typing
+from typing import Union
 
 import bittensor as bt
 import torch
@@ -82,12 +82,10 @@ class BaseMinerNeuron(BaseNeuron):
         )
         bt.logging.info(f"Axon created: {self.axon}")
 
-        self.last_sync_block = self.block - 1000
-
         # Instantiate runners
         self.should_exit: bool = False
         self.is_running: bool = False
-        self.thread: threading.Thread = None
+        self.thread: Union[threading.Thread, None] = None
         self.lock = asyncio.Lock()
 
     async def forward(self, synapse: bt.Synapse) -> bt.Synapse:
@@ -159,7 +157,8 @@ class BaseMinerNeuron(BaseNeuron):
         try:
             while not self.should_exit:
                 while (
-                    self.block - self.last_sync_block < self.config.neuron.epoch_length
+                    self.block - self.metagraph.last_update[self.uid]
+                    < self.config.neuron.epoch_length
                 ):
                     # Wait before checking again.
                     time.sleep(1)
@@ -232,21 +231,14 @@ class BaseMinerNeuron(BaseNeuron):
 
     def resync_metagraph(self):
         """Resyncs the metagraph and updates the hotkeys and moving averages based on the new metagraph."""
-        bt.logging.info("resync_metagraph()")
+        # bt.logging.info("resync_metagraph()")
 
         # Sync the metagraph.
         self.metagraph.sync(subtensor=self.subtensor)
-        self.last_sync_block = self.block
-        bt.logging.info("resync_metagraph() done")
+
 
     def should_set_weights(self) -> bool:
         return False
-
-    def should_sync_metagraph(self):
-        """
-        Check if enough epoch blocks have elapsed since the last checkpoint to sync.
-        """
-        return self.block - self.last_sync_block > self.config.neuron.epoch_length
 
     async def blacklist(self, synapse: bt.Synapse) -> typing.Tuple[bool, str]:
         """
@@ -385,14 +377,3 @@ class BaseMinerNeuron(BaseNeuron):
     async def priority_text_embedding(self, synapse: TextEmbeddingSynapse) -> float:
         return await self.priority(synapse)
 
-    def save_state(self):
-        pass
-
-    def load_state(self):
-        pass
-
-    def save_state(self):
-        pass
-
-    def load_state(self):
-        pass
