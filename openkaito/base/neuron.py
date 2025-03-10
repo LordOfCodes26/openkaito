@@ -62,8 +62,8 @@ class BaseNeuron(ABC):
         self.config.merge(base_config)
         self.check_config(self.config)
 
-        # Set up logging with the provided configuration.
-        bt.logging.set_config(config=self.config.logging)
+        # Set up logging with the provided configuration and directory.
+        bt.logging(config=self.config.logging)
 
         # If a gpu is required, set the device to cuda:N (e.g. cuda:0)
         self.device = self.config.neuron.device
@@ -77,20 +77,21 @@ class BaseNeuron(ABC):
 
         # The wallet holds the cryptographic key pairs for the miner.
         self.wallet = bt.wallet(config=self.config)
-        self.subtensor = bt.subtensor(config=self.config)
-        self.metagraph = self.subtensor.metagraph(self.config.netuid)
-
         bt.logging.info(f"Wallet: {self.wallet}")
+
+        # The subtensor is our connection to the Bittensor blockchain.
+        self.subtensor = bt.subtensor(config=self.config)
         bt.logging.info(f"Subtensor: {self.subtensor}")
+
+        # The metagraph holds the state of the network, letting us know about other validators and miners.
+        self.metagraph = self.subtensor.metagraph(self.config.netuid)
         bt.logging.info(f"Metagraph: {self.metagraph}")
 
         # Check if the miner is registered on the Bittensor network before proceeding further.
         self.check_registered()
 
         # Each miner gets a unique identity (UID) in the network for differentiation.
-        self.uid = self.metagraph.hotkeys.index(
-            self.wallet.hotkey.ss58_address
-        )
+        self.uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
         bt.logging.info(
             f"Running neuron on subnet: {self.config.netuid} with uid {self.uid} using network: {self.subtensor.chain_endpoint}"
         )
@@ -149,17 +150,11 @@ class BaseNeuron(ABC):
 
         # Define appropriate logic for when set weights.
         return (
-            (self.block - self.metagraph.last_update[self.uid])
-            > self.config.neuron.epoch_length
-            and self.neuron_type != "MinerNeuron"
-        )  # don't set weights if you're a miner
+            self.block - self.metagraph.last_update[self.uid]
+        ) > self.config.neuron.epoch_length
 
-    def save_state(self):
-        bt.logging.warning(
-            "save_state() not implemented for this neuron. You can implement this function to save model checkpoints or other useful data."
-        )
+    def save_state(self): # noqa: B027
+        pass 
 
-    def load_state(self):
-        bt.logging.warning(
-            "load_state() not implemented for this neuron. You can implement this function to load model checkpoints or other useful data."
-        )
+    def load_state(self): # noqa: B027
+        pass 
