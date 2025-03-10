@@ -17,6 +17,7 @@
 
 import copy
 import typing
+import asyncio
 from abc import ABC, abstractmethod
 
 import bittensor as bt
@@ -57,6 +58,30 @@ class BaseNeuron(ABC):
     @property
     def block(self):
         return ttl_get_block(self)
+    
+    async def init_async(self):
+        """Initialize async components."""
+        # The wallet holds the cryptographic key pairs for the miner.
+        self.wallet = bt.wallet(config=self.config)
+        bt.logging.info(f"Wallet: {self.wallet}")
+
+        # The subtensor is our connection to the Bittensor blockchain.
+        self.subtensor = AsyncSubtensor(config=self.config)
+        bt.logging.info(f"Subtensor: {self.subtensor}")
+
+        # The metagraph holds the state of the network, letting us know about other validators and miners.
+        self.metagraph = self.subtensor.metagraph(self.config.netuid)
+        bt.logging.info(f"Metagraph: {self.metagraph}")
+
+        # Check if the miner is registered on the Bittensor network before proceeding further.
+        await self.check_registered()
+
+        # Each miner gets a unique identity (UID) in the network for differentiation.
+        self.uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
+        bt.logging.info(
+            f"Running neuron on subnet: {self.config.netuid} with uid {self.uid} using network: {self.subtensor.chain_endpoint}"
+        )
+        self.step = 0
 
     def __init__(self, config=None):
         base_config = copy.deepcopy(config or BaseNeuron.config())
@@ -76,28 +101,9 @@ class BaseNeuron(ABC):
         # Build Bittensor objects
         # These are core Bittensor classes to interact with the network.
         bt.logging.info("Setting up bittensor objects.")
-
-        # The wallet holds the cryptographic key pairs for the miner.
-        self.wallet = bt.wallet(config=self.config)
-        bt.logging.info(f"Wallet: {self.wallet}")
-
-        # The subtensor is our connection to the Bittensor blockchain.
-        self.subtensor = AsyncSubtensor(config=self.config)
-        bt.logging.info(f"Subtensor: {self.subtensor}")
-
-        # The metagraph holds the state of the network, letting us know about other validators and miners.
-        self.metagraph = self.subtensor.metagraph(self.config.netuid)
-        bt.logging.info(f"Metagraph: {self.metagraph}")
-
-        # Check if the miner is registered on the Bittensor network before proceeding further.
-        self.check_registered()
-
-        # Each miner gets a unique identity (UID) in the network for differentiation.
-        self.uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
-        bt.logging.info(
-            f"Running neuron on subnet: {self.config.netuid} with uid {self.uid} using network: {self.subtensor.chain_endpoint}"
-        )
-        self.step = 0
+        # Run async initialization
+        asyncio.run(self.init_async())          
+        
 
     @abstractmethod
     async def forward(self, synapse: bt.Synapse) -> bt.Synapse: ...
