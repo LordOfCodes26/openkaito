@@ -159,7 +159,7 @@ class BaseMinerNeuron(BaseNeuron):
         try:
             while not self.should_exit:
                 while (
-                    self.block - self.last_sync_block < self.config.neuron.epoch_length
+                    self.block - self.metagraph.last_update[self.uid] < self.config.neuron.epoch_length
                 ):
                     # Wait before checking again.
                     time.sleep(1)
