@@ -16,15 +16,14 @@
 # DEALINGS IN THE SOFTWARE.
 
 import copy
+import typing
+from abc import ABC, abstractmethod
 
 import bittensor as bt
 
-from abc import ABC, abstractmethod
-
-# Sync calls set weights and also resyncs the metagraph.
-from synth.utils.config import check_config, add_args, config
-from synth.utils.misc import ttl_get_block
-from synth import __spec_version__ as spec_version
+from openkaito import __spec_version__ as spec_version
+from openkaito.utils.config import add_args, check_config, config
+from openkaito.utils.misc import ttl_get_block
 
 
 class BaseNeuron(ABC):
