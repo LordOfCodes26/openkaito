@@ -20,6 +20,8 @@ import typing
 from abc import ABC, abstractmethod
 
 import bittensor as bt
+from bittensor.core.subtensor import Subtensor
+from bittensor.core.async_subtensor import AsyncSubtensor
 
 from openkaito import __spec_version__ as spec_version
 from openkaito.utils.config import add_args, check_config, config
@@ -80,7 +82,7 @@ class BaseNeuron(ABC):
         bt.logging.info(f"Wallet: {self.wallet}")
 
         # The subtensor is our connection to the Bittensor blockchain.
-        self.subtensor = bt.subtensor(config=self.config)
+        self.subtensor = AsyncSubtensor(config=self.config)
         bt.logging.info(f"Subtensor: {self.subtensor}")
 
         # The metagraph holds the state of the network, letting us know about other validators and miners.
@@ -103,28 +105,29 @@ class BaseNeuron(ABC):
     @abstractmethod
     def run(self): ...
 
-    def sync(self):
+    async def sync(self):
         """
         Wrapper for synchronizing the state of the network for the given miner or validator.
         """
         # Ensure miner or validator hotkey is still registered on the network.
-        self.check_registered()
+        await self.check_registered()
 
         if self.should_sync_metagraph():
-            self.resync_metagraph()
+            await self.resync_metagraph()
 
         if self.should_set_weights():
-            self.set_weights()
+            await self.set_weights()
 
         # Always save state.
         self.save_state()
 
-    def check_registered(self):
+    async def check_registered(self):
         # --- Check for registration.
-        if not self.subtensor.is_hotkey_registered(
+        is_registered = await self.subtensor.is_hotkey_registered(
             netuid=self.config.netuid,
             hotkey_ss58=self.wallet.hotkey.ss58_address,
-        ):
+        )
+        if not is_registered:
             bt.logging.error(
                 f"Wallet: {self.wallet} is not registered on netuid {self.config.netuid}."
                 f" Please register the hotkey using `btcli subnets register` before trying again"
