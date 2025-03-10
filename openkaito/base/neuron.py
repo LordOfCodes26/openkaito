@@ -149,11 +149,18 @@ class BaseNeuron(ABC):
 
         # Define appropriate logic for when set weights.
         return (
-            self.block - self.metagraph.last_update[self.uid]
-        ) > self.config.neuron.epoch_length
+            (self.block - self.metagraph.last_update[self.uid])
+            > self.config.neuron.epoch_length
+            and self.neuron_type != "MinerNeuron"
+        )  # don't set weights if you're a miner
 
-    def save_state(self): # noqa: B027
-        pass 
+    def save_state(self):
+        bt.logging.warning(
+            "save_state() not implemented for this neuron. You can implement this function to save model checkpoints or other useful data."
+        )
 
-    def load_state(self): # noqa: B027
-        pass 
+    def load_state(self):
+        bt.logging.warning(
+            "load_state() not implemented for this neuron. You can implement this function to load model checkpoints or other useful data."
+        )
+
