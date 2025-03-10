@@ -246,7 +246,7 @@ class BaseMinerNeuron(BaseNeuron):
         """
         Check if enough epoch blocks have elapsed since the last checkpoint to sync.
         """
-        return self.block - self.last_sync_block > self.config.neuron.epoch_length
+        return self.block - self.metagraph.last_update[self.uid] > self.config.neuron.epoch_length
 
     async def blacklist(self, synapse: bt.Synapse) -> typing.Tuple[bool, str]:
         """
