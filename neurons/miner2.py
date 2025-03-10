@@ -90,8 +90,18 @@ class Miner(BaseMinerNeuron):
         dimensions = query.dimensions
         model = SentenceTransformer("thenlper/gte-large")
 
+        class EmbeddingReducer(nn.Module):
+            def __init__(self, input_dim=1024, output_dim=dimensions):
+                super().__init__()
+                self.projection = nn.Linear(input_dim, output_dim)
+
+            def forward(self, x):
+                return self.projection(x)
+        reducer = EmbeddingReducer(input_dim=1024, output_dim=dimensions)
         embeddings = model.encode(texts, normalize_embeddings=True)
-        query.results = embeddings.tolist()
+        embeddings_tensor = torch.tensor(embeddings, dtype=torch.float32)
+        reduced_embeddings = reducer(embeddings_tensor).detach().numpy()
+        query.results = reduced_embeddings.tolist()
         return query
 
     def print_info(self):
