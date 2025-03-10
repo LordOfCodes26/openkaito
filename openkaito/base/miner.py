@@ -19,6 +19,7 @@ import asyncio
 import threading
 import time
 import traceback
+import typing
 from typing import Union
 
 import bittensor as bt
